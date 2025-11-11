@@ -1,66 +1,113 @@
-create table author (
-    id integer primary key,
-    name text unique not null
+CREATE TABLE Author (
+    id INTEGER PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL
 );
 
-create table style (
-    id integer primary key,
-    name text unique not null
+CREATE TABLE Song (
+    id INTEGER PRIMARY KEY,
+
+    title TEXT NOT NULL,
+    author_id INTEGER NOT NULL,
+    FOREIGN KEY (author_id) REFERENCES Author(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    tempo INTEGER NOT NULL,
+    song_key TEXT,
+    style TEXT
 );
 
-create table songkey (
-    id integer primary key,
-    name text unique not null
+CREATE TABLE User (
+    id INTEGER PRIMARY KEY
 );
 
-create table song (
-    id integer primary key,
+CREATE TABLE UserSettings (
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES User(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    PRIMARY KEY (user_id),
 
-    title text not null,
-    author_id integer not null,
-    foreign key (author_id) references author(id)
-        on delete cascade
-        on update cascade,
-
-    tempo integer not null,
-    key_id integer,
-    foreign key (key_id) references songkey(id)
-        on delete set null
-        on update cascade,
-    style_id integer,
-    foreign key (style_id) references style(id)
-        on delete set null
-        on update cascade
+    font_type TEXT,
+    app_theme TEXT,
+    song_theme TEXT,
+    minor_symbol_type TEXT, -- ['m', '-']
+    playback_position TEXT,
+    rehearsal_symbol_display TEXT, -- ['highlight']
+    transposing_instrumnt TEXT,
+    chord_diagrams_type TEXT
 );
 
-create table user (
-    id integer primary key
-);
-
-create table playlist (
-    id integer primary key,
-    name text not null,
-    origin text not null, -- ['user', 'system']
+CREATE TABLE UserSong (
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES User(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    song_id INTEGER NOT NULL,
+    FOREIGN KEY (song_id) REFERENCES Song(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
     
-    user_id integer not null,
-    foreign key (user_id) references user(id)
-        on delete cascade
-        on update cascade,
+    PRIMARY KEY (user_id, song_id)
+)
 
-    unique (user_id, name)
+CREATE TABLE UserSongPlaybackSettings (
+    user_id INTEGER NOT NULL,
+    song_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id, song_id) REFERENCES UserSong(user_id, song_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    tempo INTEGER,
+    playback_key TEXT,
+    style TEXT,
+    repeats INTEGER,
+
+    piano_sound TEXT,
+    piano_volume INTEGER,
+    bass_sound TEXT,
+    bass_volume INTEGER,
+    drums_sound TEXT,
+    drums_volume INTEGER,
+
+    reverb_amount INTEGER,
+
+    chords_type TEXT, -- ['embelished']
+    
+    count_in_volume INTEGER,
+    count_in_duration INTEGER,
+
+    primary_click_sound TEXT,
+    secondary_click_sound TEXT,
+
+    PRIMARY KEY (user_id, song_id)
+)
+
+CREATE TABLE Playlist (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    origin TEXT NOT NULL, -- ['user', 'system']
+    
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES User(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    UNIQUE (user_id, name)
 );
 
-create table playlistsongs (
-    playlist_id integer not null,
-    foreign key (playlist_id) references playlist(id)
-        on delete cascade
-        on update cascade,
-    song_id integer not null,
-    foreign key (song_id) references song(id)
-        on delete cascade
-        on update cascade,
-    position integer not null,
+CREATE TABLE PlaylistSong (
+    playlist_id INTEGER NOT NULL,
+    FOREIGN KEY (playlist_id) REFERENCES Playlist(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    user_id INTEGER NOT NULL,
+    song_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id, song_id) REFERENCES UserSong(user_id, song_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
 
-    unique(playlist_id, position),
-    primary key (playlist_id, song_id)
-);
+    order INTEGER NOT NULL,
+
+    PRIMARY KEY (playlist_id, user_id, song_id)
+)
